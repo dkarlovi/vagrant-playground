@@ -1,0 +1,62 @@
+class ::Hash
+    def deep_merge(second)
+        merger = proc { |key, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : [:undefined, nil, :nil].include?(v2) ? v1 : v2 }
+        self.merge(second, &merger)
+    end
+end
+
+@settings = {
+    :net_hostname => "localhost.localdomain",
+    :net_aliases  => [],
+    :share_owner  => {:user => "apache", :group => "apache"},
+    :vm_gui       => false,
+    :vm_cpus      => 2,
+    :vm_ram       => 512,
+    :app_env      => "development"
+}.deep_merge(@settings)
+
+Vagrant.configure(2) do |config|
+    config.vm.network "private_network", type: "dhcp"
+    config.vm.hostname = (["app", @settings[:net_hostname]]).join(".")
+
+    # VirtualBox provider config
+    config.vm.provider "virtualbox" do |vm|
+        vm.gui  = @settings[:vm_gui]
+        vm.name = @settings[:net_hostname]
+        vm.customize ["modifyvm", :id, "--cpus", @settings[:vm_cpus]]
+        vm.customize ["modifyvm", :id, "--memory", @settings[:vm_ram]]
+        vm.customize ["modifyvm", :id, "--ioapic", "on"]
+        vm.customize ["modifyvm", :id, "--bioslogodisplaytime", "1"]
+    end
+
+    # /vagrant filesystem ownership
+    share_owner = @settings[:share_owner]
+    config.vm.synced_folder ".", "/vagrant", :owner => share_owner[:user], :group => share_owner[:group]
+
+    # /etc/hosts manager
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.aliases = (((@settings[:net_aliases] + [@settings[:net_hostname]]) + (@settings[:net_aliases] + [@settings[:net_hostname]]).map{ |a| 'www.' + a}).map{ |a| a + '.dev' }).join(' ')
+    config.hostmanager.ip_resolver = proc do |vm|
+        if vm.id
+            `VBoxManage guestproperty get #{vm.id} "/VirtualBox/GuestInfo/Net/1/V4/IP"`.split()[1]
+        end
+    end
+
+    # puppet module installation
+    config.vm.provision "shell" do |s|
+        s.inline = "PUPPETFILE=/vagrant/Puppetfile PUPPETFILE_DIR=/etc/puppet/modules /usr/bin/r10k puppetfile install"
+    end
+
+    # puppet provision
+    config.vm.provision "puppet" do |puppet|
+        puppet.manifests_path = "puppet"
+        puppet.manifest_file = "default.pp"
+        puppet.facter = {
+            "app_environment" => @settings[:app_env],
+            "host_hostname" => ENV['HOSTNAME'],
+            "host_domain" => ENV['HOSTNAME'],
+            "host_fqdn" => ENV['HOSTNAME'],
+        }
+    end
+end

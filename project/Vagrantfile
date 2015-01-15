@@ -1,0 +1,17 @@
+@settings = {
+    :net_hostname   => "example.com",
+    # :net_aliases    => [],
+    # :share_owner    => {:user => "apache", :group => "apache"},
+    # :vm_gui         => false,
+    # :vm_cpus        => 2,
+    # :vm_ram         => 512,
+    # :app_env        => "development"
+}
+
+Vagrant.configure(2) do |config|
+    config.vm.box = "dkarlovi/centos-6.6"
+
+    # bug in hostmanager? need to specify these here too
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+end

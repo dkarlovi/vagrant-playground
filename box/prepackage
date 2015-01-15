@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# normalize hostname
+hostname localhost.localdomain
+ 
+# Remove yum cache
+yum clean all
+ 
+# Remove yum files
+find /var/cache -type f | xargs rm -f
+ 
+# Remove bash history
+unset HISTFILE
+rm -f /root/.bash_history
+rm -f /home/vagrant/.bash_history
+ 
+# set insecure keypair for vagrant user
+curl https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant.pub -o /home/vagrant/.ssh/authorized_keys
+
+# Cleanup log files
+find /var/log -type f | while read f; do echo -ne '' > $f; done;
+
+# network detection hack
+rm -f /etc/udev/rules.d/70-persistent-net.rules
+ 
+# Zero free space to aid VM compression
+dd if=/dev/zero of=/EMPTY bs=1M
+rm -f /EMPTY
+ 
+# Whiteout /boot
+count=`df --sync -kP /boot | tail -n1 | awk -F ' ' '{print $4}'`;
+count=$((count -= 1))
+dd if=/dev/zero of=/boot/whitespace bs=1024 count=$count;
+rm /boot/whitespace;
+ 
+# Whiteout swap
+swappart=`cat /proc/swaps | tail -n1 | awk -F ' ' '{print $1}'`
+swapoff $swappart;
+dd if=/dev/zero of=$swappart;
+mkswap $swappart;
+swapon $swappart; 
+
+history -c
+poweroff
