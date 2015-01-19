@@ -5,7 +5,7 @@ class ::Hash
     end
 end
 
-@settings = {
+local_settings = {
     :net_hostname => "localhost.localdomain",
     :net_aliases  => [],
     :share_owner  => {:user => "apache", :group => "apache"},
@@ -13,7 +13,17 @@ end
     :vm_cpus      => 2,
     :vm_ram       => 512,
     :app_env      => "development"
-}.deep_merge(@settings)
+}
+if defined? @settings
+    @settings = local_settings.deep_merge(@settings)
+else
+    @settings = local_settings
+end
+
+# mandatory plugins
+unless Vagrant.has_plugin?("vagrant-hostmanager")
+  raise 'Missing required plugin vagrant-hostmanager, install with "vagrant plugin install vagrant-hostmanager"'
+end
 
 Vagrant.configure(2) do |config|
     config.vm.network "private_network", type: "dhcp"
