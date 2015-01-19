@@ -8,6 +8,7 @@ end
 defaults = {
     :net_hostname => "localhost.localdomain",
     :net_aliases  => [],
+    :net_suffix   => "dev",
     :share_owner  => {:user => "apache", :group => "apache"},
     :vm_gui       => false,
     :vm_cpus      => 2,
@@ -27,7 +28,7 @@ end
 
 Vagrant.configure(2) do |config|
     config.vm.network "private_network", type: "dhcp"
-    config.vm.hostname = (["app", @settings[:net_hostname]]).join(".")
+    config.vm.hostname = (["app", @settings[:net_hostname], @settings[:net_suffix]]).join(".")
 
     # VirtualBox provider config
     config.vm.provider "virtualbox" do |vm|
@@ -46,7 +47,7 @@ Vagrant.configure(2) do |config|
     # /etc/hosts manager
     config.hostmanager.enabled = true
     config.hostmanager.manage_host = true
-    config.hostmanager.aliases = (((@settings[:net_aliases] + [@settings[:net_hostname]]) + (@settings[:net_aliases] + [@settings[:net_hostname]]).map{ |a| 'www.' + a}).map{ |a| a + '.dev' }).join(' ')
+    config.hostmanager.aliases = (((@settings[:net_aliases] + [@settings[:net_hostname]]) + (@settings[:net_aliases] + [@settings[:net_hostname]]).map{ |a| 'www.' + a}).map{ |a| a + '.' + @settings[:net_suffix] }).join(' ')
     config.hostmanager.ip_resolver = proc do |vm|
         if vm.id
             `VBoxManage guestproperty get #{vm.id} "/VirtualBox/GuestInfo/Net/1/V4/IP"`.split()[1]
