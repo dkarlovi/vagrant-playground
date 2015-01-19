@@ -5,7 +5,7 @@ class ::Hash
     end
 end
 
-local_settings = {
+defaults = {
     :net_hostname => "localhost.localdomain",
     :net_aliases  => [],
     :share_owner  => {:user => "apache", :group => "apache"},
@@ -15,9 +15,9 @@ local_settings = {
     :app_env      => "development"
 }
 if defined? @settings
-    @settings = local_settings.deep_merge(@settings)
+    @settings = defaults.deep_merge(@settings)
 else
-    @settings = local_settings
+    @settings = defaults
 end
 
 # mandatory plugins
