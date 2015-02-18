@@ -9,7 +9,6 @@ defaults = {
     :net_hostname => "localhost.localdomain",
     :net_aliases  => [],
     :net_suffix   => "dev",
-    :share_owner  => {:user => "apache", :group => "apache"},
     :vm_gui       => false,
     :vm_cpus      => 2,
     :vm_ram       => 512,
@@ -42,7 +41,7 @@ Vagrant.configure(2) do |config|
 
     # /vagrant filesystem ownership
     share_owner = @settings[:share_owner]
-    config.vm.synced_folder ".", "/vagrant", :owner => share_owner[:user], :group => share_owner[:group]
+    config.vm.synced_folder ".", "/vagrant", :type => "nfs"
 
     # /etc/hosts manager
     config.hostmanager.enabled = true
