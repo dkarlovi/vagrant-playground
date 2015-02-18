@@ -1,2 +1,2 @@
 #!/bin/sh
-vagrant package --base dkarlovi-centos-6.6 --vagrantfile ./_Vagrantfile --out ./package.box
+vagrant package --base basebox-dkarlovi-centos-6.6 --vagrantfile ./_Vagrantfile --out ./package.box
