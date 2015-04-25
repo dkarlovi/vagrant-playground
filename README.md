@@ -8,3 +8,16 @@ Contents:
   - `box/prepackage` - used just before building the box on the box template (from withing the VM, assuming CentOS), it is based on a blog post I lost the link to :(
   - `box/package` - used to package the box (from the host machine)
   - `project/Vagrantfile` - sample project-specific config
+
+# Puppet+Hiera config
+
+`/etc/puppet/hiera.yaml` (will auto-load `/vagrant/config.yaml`):
+    
+    :backends:
+      - yaml
+    :yaml:
+      :datadir: /vagrant             
+    :hierarchy:
+      - config
+      
+using [Hiera's automatic parameter lookup](https://docs.puppetlabs.com/hiera/1/puppet.html#automatic-parameter-lookup).
