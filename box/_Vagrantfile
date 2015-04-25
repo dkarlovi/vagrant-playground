@@ -44,6 +44,12 @@ unless Vagrant.has_plugin?("vagrant-hostmanager")
     raise 'Missing required plugin vagrant-hostmanager, install with "vagrant plugin install vagrant-hostmanager"'
 end
 
+if Vagrant::Util::Platform.windows?
+    unless Vagrant.has_plugin?("vagrant-winnfsd")
+        raise 'Missing required plugin vagrant-winnfsd, install with "vagrant plugin install vagrant-winnfsd"'
+    end
+end
+
 Vagrant.configure(2) do |config|
     config.vm.network "private_network", type: "dhcp"
     config.vm.hostname = (["app", settings["net"]["hostname"], settings["net"]["tld"]]).join(".")
