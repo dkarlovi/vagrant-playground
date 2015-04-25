@@ -15,35 +15,45 @@ end
 project_root = File.dirname(project_vagrantfile)
 
 defaults = {
-    :net_hostname => "localhost.localdomain",
-    :net_aliases  => [],
-    :net_suffix   => "dev",
-    :vm_gui       => false,
-    :vm_cpus      => 2,
-    :vm_ram       => 512,
-    :app_env      => "development"
+    "net" => {
+        "hostname" => "localhost.localdomain",
+        "aliases"  => [],
+        "tld"      => "dev"
+    },
+    "vm" => {
+        "cpu"      => 2,
+        "ram"      => 512,
+        "gui"      => false
+    },
+    "app" => {
+        "env"      => "development"
+    }
 }
-if defined? @settings
-    @settings = defaults.deep_merge(@settings)
+
+config_file = project_root + File::SEPARATOR + 'config.yaml'
+if File.exists?(config_file)
+    require 'yaml'
+    settings = YAML.load_file(config_file)
+    settings = defaults.deep_merge(settings)
 else
-    @settings = defaults
+    settings = defaults
 end
 
 # mandatory plugins
 unless Vagrant.has_plugin?("vagrant-hostmanager")
-  raise 'Missing required plugin vagrant-hostmanager, install with "vagrant plugin install vagrant-hostmanager"'
+    raise 'Missing required plugin vagrant-hostmanager, install with "vagrant plugin install vagrant-hostmanager"'
 end
 
 Vagrant.configure(2) do |config|
     config.vm.network "private_network", type: "dhcp"
-    config.vm.hostname = (["app", @settings[:net_hostname], @settings[:net_suffix]]).join(".")
+    config.vm.hostname = (["app", settings["net"]["hostname"], settings["net"]["tld"]]).join(".")
 
     # VirtualBox provider config
     config.vm.provider "virtualbox" do |vm|
-        vm.gui  = @settings[:vm_gui]
-        vm.name = @settings[:net_hostname]
-        vm.customize ["modifyvm", :id, "--cpus", @settings[:vm_cpus]]
-        vm.customize ["modifyvm", :id, "--memory", @settings[:vm_ram]]
+        vm.gui  = settings["vm"]["gui"]
+        vm.name = settings["net"]["hostname"]
+        vm.customize ["modifyvm", :id, "--cpus", settings["vm"]["cpu"]]
+        vm.customize ["modifyvm", :id, "--memory", settings["vm"]["ram"]]
         vm.customize ["modifyvm", :id, "--ioapic", "on"]
         vm.customize ["modifyvm", :id, "--bioslogodisplaytime", "1"]
     end
@@ -58,7 +68,7 @@ Vagrant.configure(2) do |config|
     # /etc/hosts manager
     config.hostmanager.enabled = true
     config.hostmanager.manage_host = true
-    config.hostmanager.aliases = (((@settings[:net_aliases] + [@settings[:net_hostname]]) + (@settings[:net_aliases] + [@settings[:net_hostname]]).map{ |a| 'www.' + a}).map{ |a| a + '.' + @settings[:net_suffix] }).join(' ')
+    config.hostmanager.aliases = (((settings["net"]["aliases"] + [settings["net"]["hostname"]]) + (settings["net"]["aliases"] + [settings["net"]["hostname"]]).map{ |a| 'www.' + a}).map{ |a| a + '.' + settings["net"]["tld"] }).join(' ')
     config.hostmanager.ip_resolver = proc do |vm|
         if vm.id
             `VBoxManage guestproperty get #{vm.id} "/VirtualBox/GuestInfo/Net/1/V4/IP"`.split()[1]
@@ -78,8 +88,8 @@ Vagrant.configure(2) do |config|
             puppet.manifests_path = "puppet"
             puppet.manifest_file = "default.pp"
             puppet.facter = {
-                "app_environment" => @settings[:app_env],
-                "app_hostname" => @settings[:net_hostname],
+                "app_environment" => settings["app"]["env"],
+                "app_hostname" => settings["net"]["hostname"],
                 "host_hostname" => ENV['HOSTNAME'],
                 "host_domain" => ENV['HOSTNAME'],
                 "host_fqdn" => ENV['HOSTNAME'],
