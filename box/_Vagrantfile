@@ -16,7 +16,6 @@ project_root = File.dirname(project_vagrantfile)
 
 defaults = {
     "net" => {
-        "hostname" => "localhost.localdomain",
         "aliases"  => [],
         "tld"      => "dev"
     },
@@ -52,12 +51,26 @@ end
 
 Vagrant.configure(2) do |config|
     config.vm.network "private_network", type: "dhcp"
-    config.vm.hostname = (["app", settings["net"]["hostname"], settings["net"]["tld"]]).join(".")
+    if settings["net"]["hostname"]
+        config.vm.hostname = (["app", settings["net"]["hostname"], settings["net"]["tld"]]).join(".")
+    end
+    
+    vmname = nil
+    if settings["vm"]["name"]
+        # excplicit name set
+        vmname = settings["vm"]["name"]
+    elsif settings["net"]["hostname"]
+        # default from hostname
+        vmname = settings["net"]["hostname"]
+    end
 
     # VirtualBox provider config
     config.vm.provider "virtualbox" do |vm|
+        if vmname
+            vm.name = vmname
+        end
+    
         vm.gui  = settings["vm"]["gui"]
-        vm.name = settings["net"]["hostname"]
         vm.customize ["modifyvm", :id, "--cpus", settings["vm"]["cpu"]]
         vm.customize ["modifyvm", :id, "--memory", settings["vm"]["ram"]]
         vm.customize ["modifyvm", :id, "--ioapic", "on"]
@@ -74,7 +87,9 @@ Vagrant.configure(2) do |config|
     # /etc/hosts manager
     config.hostmanager.enabled = true
     config.hostmanager.manage_host = true
-    config.hostmanager.aliases = (((settings["net"]["aliases"] + [settings["net"]["hostname"]]) + (settings["net"]["aliases"] + [settings["net"]["hostname"]]).map{ |a| 'www.' + a}).map{ |a| a + '.' + settings["net"]["tld"] }).join(' ')
+    if settings["net"]["hostname"]
+        config.hostmanager.aliases = (((settings["net"]["aliases"] + [settings["net"]["hostname"]]) + (settings["net"]["aliases"] + [settings["net"]["hostname"]]).map{ |a| 'www.' + a}).map{ |a| a + '.' + settings["net"]["tld"] }).join(' ')
+    end
     config.hostmanager.ip_resolver = proc do |vm|
         if vm.id
             `VBoxManage guestproperty get #{vm.id} "/VirtualBox/GuestInfo/Net/1/V4/IP"`.split()[1]
