@@ -47,6 +47,10 @@ if Vagrant::Util::Platform.windows?
     unless Vagrant.has_plugin?("vagrant-winnfsd")
         raise 'Missing required plugin vagrant-winnfsd, install with "vagrant plugin install vagrant-winnfsd"'
     end
+
+    unless Vagrant.has_plugin?("vagrant-triggers")
+        raise 'Missing required plugin vagrant-triggers, install with "vagrant plugin install vagrant-triggers"'
+    end
 end
 
 Vagrant.configure(2) do |config|
@@ -115,6 +119,13 @@ Vagrant.configure(2) do |config|
                 "host_domain" => ENV['HOSTNAME'],
                 "host_fqdn" => ENV['HOSTNAME'],
             }
+        end
+    end
+
+    # kill winnfsd on Windows, it cannot handle more than one project at a time
+    if Vagrant::Util::Platform.windows?
+        config.trigger.after :halt do
+          run "taskkill /pid winnfsd.exe"
         end
     end
 end
