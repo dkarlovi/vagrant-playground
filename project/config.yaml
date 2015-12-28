@@ -1,0 +1,5 @@
+net:
+    hostname: example.com
+vm:
+    cpus: 4
+    ram: 512
