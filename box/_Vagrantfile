@@ -6,7 +6,7 @@ class ::Hash
 end
 
 # this will break if pwd is not equal to the dir holding the Vagrantfile
-# 
+#
 # TODO: change this once we figure out how to access the information where the root Vagrantfile is
 project_vagrantfile = Dir.pwd + File::SEPARATOR + 'Vagrantfile'
 unless File.exist?(project_vagrantfile)
@@ -59,7 +59,7 @@ Vagrant.configure(2) do |config|
     if settings["net"]["hostname"]
         config.vm.hostname = (["app", settings["net"]["hostname"], settings["net"]["tld"]]).join(".")
     end
-    
+
     vmname = nil
     if settings["vm"]["name"]
         # excplicit name set
@@ -74,7 +74,7 @@ Vagrant.configure(2) do |config|
         if vmname
             vm.name = vmname
         end
-    
+
         vm.gui  = settings["vm"]["gui"]
         vm.customize ["modifyvm", :id, "--cpus", settings["vm"]["cpu"]]
         vm.customize ["modifyvm", :id, "--memory", settings["vm"]["ram"]]
@@ -91,8 +91,12 @@ Vagrant.configure(2) do |config|
             config.vm.synced_folder ".", "/vagrant", :type => "nfs", mount_options: ["nolock", "vers=3", "tcp", "noatime", "actimeo=1"]
         end
     when "rsync"
-        config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
+        config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: [".git/", "src/.idea/"]
     end
+
+    # dedicated folder which enabled the machine to push back data
+    # regardless of the main sync method (no talk back for rsync, for example)
+    config.vm.synced_folder ".", "/talkback",  mount_options: ["dmode=777,fmode=666"]
 
     # /etc/hosts manager
     config.hostmanager.enabled = true
