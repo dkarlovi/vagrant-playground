@@ -133,9 +133,13 @@ Vagrant.configure(2) do |config|
     end
 
     # kill winnfsd on Windows, it cannot handle more than one project at a time
-    if Vagrant::Util::Platform.windows?
-        config.trigger.after :halt do
-          run "taskkill /pid winnfsd.exe /F 2>NUL"
+    if Vagrant::Util::Platform.windows? and settings["vm"]["sync"] == "nfs"
+        config.trigger.before :up do
+          Vagrant::Util::Subprocess.execute("taskkill.exe", '/F', '/PID', 'winnfsd.exe')
+        end
+
+        config.trigger.after [:halt, :destroy] do
+           Vagrant::Util::Subprocess.execute("taskkill.exe", '/F', '/PID', 'winnfsd.exe')
         end
     end
 end
