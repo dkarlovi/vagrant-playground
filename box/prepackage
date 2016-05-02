@@ -13,6 +13,8 @@ find /var/cache -type f | xargs rm -f
 unset HISTFILE
 rm -f /root/.bash_history
 rm -f /home/vagrant/.bash_history
+rm -rf /root/.gem /root/.npm
+rm -rf /usr/share/doc/*
  
 # set insecure keypair for vagrant user
 curl https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant.pub -o /home/vagrant/.ssh/authorized_keys
